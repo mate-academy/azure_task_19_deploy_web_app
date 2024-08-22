@@ -87,11 +87,11 @@ New-AzVm `
 -SshKeyName $sshKeyName `
 -PublicIpAddressName $jumpboxVmName
 
+Write-Host "Registering the ContainerRegistry resource provider..."
+Register-AzResourceProvider -ProviderNamespace "Microsoft.ContainerRegistry"
+
 Write-Host "Deploying Azure Container Registry $acrName ..."
 New-AzContainerRegistry -ResourceGroupName $resourceGroupName -Name $acrName -Sku $acrSku -Location $location
-
-#Write-Host "Registering the ContainerRegistry resource provider..."
-#Register-AzResourceProvider -ProviderNamespace "Microsoft.ContainerRegistry"
 
 # Clone the repository
 git clone $repoUrl
