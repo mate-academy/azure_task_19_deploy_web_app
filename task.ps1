@@ -111,7 +111,12 @@ sudo docker tag todoapp:v1 $acrLoginServer/todoapp:v1
 az acr login --name $acrName
 
 # Push the Docker image to ACR
-sudo docker push $acrLoginServer/todoapp:v1
+#sudo docker push $acrLoginServer/todoapp:v1
+# Push the Docker image to ACR and wait for it to finish
+Start-Process -FilePath "sudo" -ArgumentList "docker push $acrLoginServer/todoapp:v1" -Wait
+
+# Pause the script
+Read-Host -Prompt "Press Enter to continue..."
 
 Write-Host "Creating App Service plan $planName ..."
 New-AzAppServicePlan -ResourceGroupName $resourceGroupName -Name $planName -Location $location -Tier Free -NumberOfWorkers 1
