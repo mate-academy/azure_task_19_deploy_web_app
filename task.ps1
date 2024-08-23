@@ -22,6 +22,7 @@ $acrName = "mateacr"  # Make sure the name is globally unique
 $acrSku = "Basic"
 $appName = "mate-webapp"
 $planName = "mate-appservice-plan"
+$registryName = "task-19-todoapp"
 
 Write-Host "Creating a resource group $resourceGroupName ..."
 New-AzResourceGroup -Name $resourceGroupName -Location $location
@@ -94,17 +95,18 @@ Write-Host "Deploying Azure Container Registry $acrName ..."
 New-AzContainerRegistry -ResourceGroupName $resourceGroupName -Name $acrName -Sku $acrSku -Location $location
 
 # Clone the repository
-git clone $repoUrl
-cd ./azure_task_19_deploy_web_app/app  # Navigate to the app directory
+#git clone $repoUrl
+cd ./app  # Navigate to the app directory
 
 # Build the Docker image
-docker build -t todoapp:v1 .
+sudo docker build -t todoapp:v1 .
 
 $acrLoginServer = "$acrName.azurecr.io"
 
 # Tag the Docker image with the full name
-docker tag todoapp:v1 $acrLoginServer/todoapp:v1
-
+sudo docker tag todoapp:v1 $acrLoginServer/todoapp:v1
+# connect container registry
+#Connect-AzContainerRegistry -Name $acrName
 # Log in to ACR
 az acr login --name $acrName
 
@@ -119,7 +121,7 @@ New-AzWebApp -ResourceGroupName $resourceGroupName -Name $appName -Location $loc
 
 # Configure the Web App to use ACR credentials
 Write-Host "Configuring Web App $appName to use ACR credentials ..."
-$acrCredentials = (az acr credential show --name $acrName --resource-group $resourceGroupName | ConvertFrom-Json)
+$acrCredentials = (az acr credential show --name $acrName --resource-group $resourceGroupName --debug | ConvertFrom-Json)
 $acrUsername = $acrCredentials.username
 $acrPassword = $acrCredentials.passwords[0].value
 
