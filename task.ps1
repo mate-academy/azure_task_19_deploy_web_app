@@ -87,7 +87,7 @@ $plan = Get-AzAppServicePlan -ResourceGroupName $resourceGroupName -Name $planNa
  }
 
 # Create the Web App with container settings
-$webApp = New-AzWebApp -ResourceGroupName $resourceGroupName -Name $appName -Location $location -AppServicePlan $planName -ContainerImageName $containerImageName
+$webApp = New-AzWebApp -ResourceGroupName $resourceGroupName -Name $appName -Location $location -AppServicePlan $planName -ContainerImageName $containerImageName -EnableContainerContinuousDeployment
 
 # Configure the Web App to use ACR credentials
  Write-Host "Configuring Web App $appName to use ACR credentials ..."
