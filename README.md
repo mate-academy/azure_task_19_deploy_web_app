@@ -37,7 +37,7 @@ If you are a Windows user, before running this command, please also run the foll
 
 Today you will mostly work in Azure Portal. To complete this task, perform the following steps: 
 
-1. Create a resource group called `mate-azure-task-19`;
+    1. Create a resource group called `mate-azure-task-19`;
 
 2. Follow the [tutorial](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-get-started-portal?tabs=azure-powershell) to deploy [Azure Container Registry](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-intro). Azure Container Registry (or ACR for short) — is an Azure PaaS service for private Docker container registry, which is fully integrated with other Azure products, like App Services. **When deploying the ACR, make sure to use `Basic` SKU**;
 
@@ -78,3 +78,4 @@ Here is how to complete tasks in this module:
 6. When all tests will pass — commit your changes and submit the solution for review. 
 
 Pro tip: if you are stuck with any of the implementation steps, run `scripts/generate-artifacts.ps1` and `scripts/validate-artifacts.ps1`. The validation script might give you a hint on what to do.  
+
