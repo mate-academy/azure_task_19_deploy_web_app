@@ -1,6 +1,6 @@
 param(
-    [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-    [string]$ArtifactsStorageAccountName='matestorage123'
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [string]$ArtifactsStorageAccountName = 'matestorage3'
 )
 
 # default script values
@@ -15,10 +15,10 @@ $artifactsConfigPath = "$PWD/artifacts.json"
 # initial validation
 Write-Output "Running initial validation"
 $context = Get-AzContext  
-if ($context)   
-{  
+if ($context) {  
     Write-Output "Azure Powershell module is installed, account is connected."  
-} else {  
+}
+else {  
     throw "Please log in to Azure using Azure Powershell module (run Connect-AzAccount)"
 }  
 
@@ -26,7 +26,8 @@ Write-Output "Checking if storage account exists"
 $storageAccount = (Get-AzStorageAccount -ErrorAction SilentlyContinue | Where-Object -Property 'StorageAccountName' -EQ -Value $ArtifactsStorageAccountName )
 if ($storageAccount) {
     Write-Output "Storage account found"
-} else { 
+}
+else { 
     throw "Unable to find storage account $ArtifactsStorageAccountName . Please make sure, that you specified the correct name of the storage account for the artifacts and that it is present in your Azure subscription"
 }
 
@@ -34,7 +35,8 @@ Write-Output "Checking if artifacts storage container exists"
 $artifactContainer = Get-AzStorageContainer -Name $containerName -Context $storageAccount.Context -ErrorAction SilentlyContinue
 if ($artifactContainer) { 
     Write-Output "Storage container for artifacts found!" 
-} else { 
+}
+else { 
     throw "Unable to find a storage container $containerName in the storage account $ArtifactsStorageAccountName, please make sure that it's created"
 }
 
