@@ -51,24 +51,24 @@ echo $token
 #Connect-AzContainerRegistry -Name $acrName -ExposeToken
 # Clone the repository
 cd ./app  # Navigate to the app directory
-#sudo docker login
+#sudo docker log
 # Build the Docker image
-sudo docker build -t todoapp:v1 .
+docker build -t todoapp:v1 .
 
 
 #sudo docker login $acrLoginServer
 # Tag the Docker image with the full name
 
-sudo docker tag todoapp:v1 $acrLoginServer/todoapp:v1
+docker tag todoapp:v1 $acrLoginServer/todoapp:v1
 # connect container registry
 #Connect-AzContainerRegistry -Name $acrName
 # Log in to ACR
 #az acr login --name $acrName
-sudo docker login $acrLoginServer -u $username -p $token
+docker login $acrLoginServer -u $username -p $token
 # Push the Docker image to ACR
-#sudo docker push $acrLoginServer/todoapp:v1
+docker push $acrLoginServer/todoapp:v1
 # Push the Docker image to ACR and wait for it to finish
-Start-Process -FilePath "sudo" -ArgumentList "docker push $acrLoginServer/todoapp:v1" -Wait
+#Start-Process -FilePath "sudo" -ArgumentList "docker push $acrLoginServer/todoapp:v1" -Wait
 
 #Write-Host "Creating App Service plan $planName ..."
 #New-AzAppServicePlan -ResourceGroupName $resourceGroupName -Name $planName -Location $location -Tier Free -NumberOfWorkers 1 -Linux
@@ -93,9 +93,22 @@ $webApp = New-AzWebApp -ResourceGroupName $resourceGroupName -Name $appName -Loc
  Write-Host "Configuring Web App $appName to use ACR credentials ..."
 #add new partContainerImageName
 #Get-AzWebApp -ResourceGroupName $resourceGroupName -Name $appName | Select-Object -ExpandProperty SiteConfig
+
+#old
 $acrCredentials = az acr credential show --name $acrName --resource-group $resourceGroupName | ConvertFrom-Json
 $acrUsername = $acrCredentials.username
 $acrPassword = $acrCredentials.passwords[0].value
+
+#new
+#$acrCredentials = az acr credential --name $acrName --resource-group $resourceGroupName | ConvertFrom-Json
+
+#if ($acrCredentials.passwords) {
+#    $acrUsername = $acrCredentials.username
+#    $acrPassword = $acrCredentials.passwords[0].value
+#} else {
+#    Write-Host "Failed to retrieve ACR credentials. Please check the ACR configuration or permissions."
+#    exit 1
+#}
 
 #$acrCredentials = (az acr credential show --name $acrName --resource-group $resourceGroupName --debug | ConvertFrom-Json)
 # Configure the Web App to use a Docker container
