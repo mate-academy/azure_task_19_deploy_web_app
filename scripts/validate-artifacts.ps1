@@ -4,7 +4,7 @@ param(
 )
 
 
-# default script values 
+# default script values
 $taskName = "task19"
 
 $artifactsConfigPath = "$PWD/artifacts.json"
@@ -94,14 +94,14 @@ if ($webApp ) {
 
 if ($webApp.kind.Contains('container')) { 
     Write-Output "`u{2705} Checked if the Web App has a type 'container' - OK."
-} else { 
+} else {
     Write-Output `u{1F914}
     throw "Unable to validate the web app type. Please make sure that Web App type is set to 'Container' (for that, recreate the web app) and try again."
 }
 
-if ($webApp.properties.siteConfig.linuxFxVersion.Contains($imageName)) {
+if ($webApp.properties.siteConfig.linuxFxVersion.Contains("$($registryName).azurecr.io/")) {
     Write-Output "`u{2705} Checked if the Web App is using docker image, published to the task ACR - OK."
-} else { 
+} else {
     Write-Output `u{1F914}
     throw "Unable to validate, that the web app is using Docker image from the ACR. Please make sure that the web app is loading docker image from the ACR you deployed for this task, and try again."
 }
