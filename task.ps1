@@ -1,88 +1,91 @@
-# Ensure PowerShell 7
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    Write-Error "This script requires PowerShell 7. Please run with 'pwsh' command."
-    exit 1
+<#
+.SYNOPSIS
+Azure Web App Deployment Script for todoapp
+#>
+
+# 1. Налаштування середовища
+$resourceGroup = "mate-azure-task-19"
+$location = "WestEurope" # Спробуйте змінити регіон на підтримуваний
+$acrName = "mateacr123"
+$appServicePlan = "mate-appservice-plan"
+$webAppName = "mate-todoapp-$(Get-Random -Minimum 100 -Maximum 999)"
+$imageTag = "v1"
+
+# 2. Автентифікація в Azure
+Connect-AzAccount -TenantId "c71216fc-4300-4d81-b498-00203c0446e0"
+
+# 3. Створення ресурсної групи
+if (-not (Get-AzResourceGroup -Name $resourceGroup -ErrorAction SilentlyContinue)) {
+    New-AzResourceGroup -Name $resourceGroup -Location $location
 }
 
-# Login to Azure
-Connect-AzAccount
-
-# Set variables
-$resourceGroupName = "mate-azure-task-19"
-$location = "eastus"
-$acrName = "mateacr$(Get-Random -Maximum 9999)"
-$appName = "todoapp$(Get-Random -Maximum 9999)"
-$dockerImageName = "todoapp"
-$dockerImageTag = "v1"
-$appFolderPath = ".\app"  # Assuming app files are in current directory\app
-
-# Verify app folder exists
-if (-not (Test-Path -Path $appFolderPath)) {
-    throw "App folder not found at $appFolderPath. Please ensure the app files are in the correct location."
+# 4. Створення ACR (якщо не існує)
+if (-not (Get-AzContainerRegistry -ResourceGroupName $resourceGroup | Where-Object { $_.Name -eq $acrName })) {
+    New-AzContainerRegistry `
+      -ResourceGroupName $resourceGroup `
+      -Name $acrName `
+      -Sku Basic `
+      -EnableAdminUser `
+      -Location $location
 }
 
-# Create resource group
-Write-Host "Creating resource group..."
-New-AzResourceGroup -Name $resourceGroupName -Location $location
+# Отримання ACR credentials
+$acrCredentials = Get-AzContainerRegistryCredential -ResourceGroupName $resourceGroup -Name $acrName
+$dockerUsername = $acrCredentials.Username
+$dockerPassword = $acrCredentials.Password
 
-# Create Azure Container Registry (Basic SKU)
-Write-Host "Creating Azure Container Registry..."
-$acr = New-AzContainerRegistry `
-    -ResourceGroupName $resourceGroupName `
-    -Name $acrName `
-    -Sku Basic `
-    -EnableAdminUser `
-    -Location $location
+# Перетворення пароля в SecureString
+$secureDockerPassword = ConvertTo-SecureString $dockerPassword -AsPlainText -Force
 
-# Login to ACR
-Write-Host "Logging in to ACR..."
-$creds = Get-AzContainerRegistryCredential -Registry $acr
-docker login "$($acr.Name).azurecr.io" -u $creds.Username -p $creds.Password
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to login to ACR"
+# Отримання URL реєстру
+$acrLoginServer = (Get-AzContainerRegistry -ResourceGroupName $resourceGroup -Name $acrName).LoginServer
+
+# 5. Створення App Service Plan (якщо не існує)
+if (-not (Get-AzAppServicePlan -ResourceGroupName $resourceGroup | Where-Object { $_.Name -eq $appServicePlan })) {
+    Write-Host "App Service Plan не знайдено. Створюємо новий план..."
+    New-AzAppServicePlan `
+      -ResourceGroupName $resourceGroup `
+      -Name $appServicePlan `
+      -Location $location `
+      -Tier "Free" `
+      -WorkerSize "Small"
 }
 
-# Build Docker image
-Write-Host "Building Docker image..."
-Set-Location -Path $appFolderPath
-docker build -t "$($acr.Name).azurecr.io/$dockerImageName`:$dockerImageTag" .
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to build Docker image"
+# 6. Клонування репозиторію та збірка образу
+if (-not (Test-Path "./azure_task_19_deploy_web_app")) {
+    git clone https://github.com/mate-academy/azure_task_19_deploy_web_app.git
 }
+cd azure_task_19_deploy_web_app/app
 
-# Push image to ACR
-Write-Host "Pushing Docker image to ACR..."
-docker push "$($acr.Name).azurecr.io/$dockerImageName`:$dockerImageTag"
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to push Docker image to ACR"
-}
+docker build -t todoapp . 
 
-# Create App Service plan (Free tier)
-Write-Host "Creating App Service plan..."
-$appServicePlan = New-AzAppServicePlan `
-    -ResourceGroupName $resourceGroupName `
-    -Name "todoapp-plan" `
-    -Location $location `
-    -Tier "Free" `
-    -WorkerSize "Small"
+# 7. Тегування та публікація образу
+docker tag todoapp "${acrLoginServer}/todoapp:${imageTag}"
+$dockerPassword | docker login "${acrLoginServer}" --username $dockerUsername --password-stdin
+docker push "${acrLoginServer}/todoapp:${imageTag}"
 
-# Create Web App for Containers
-Write-Host "Creating Web App for Containers..."
-$webApp = New-AzWebApp `
-    -ResourceGroupName $resourceGroupName `
-    -Name $appName `
-    -Location $location `
-    -AppServicePlan $appServicePlan.Name `
-    -ContainerImageName "$($acr.Name).azurecr.io/$dockerImageName`:$dockerImageTag"
+# 8. Розгортання Web App
+New-AzWebApp `
+  -ResourceGroupName $resourceGroup `
+  -Name $webAppName `
+  -AppServicePlan $appServicePlan `
+  -Location $location `
+  -ContainerImageName "${acrLoginServer}/todoapp:${imageTag}" `
+  -ContainerRegistryUrl $acrLoginServer `
+  -ContainerRegistryUser $dockerUsername `
+  -ContainerRegistryPassword $secureDockerPassword
 
-# Configure ACR credentials
-Write-Host "Configuring ACR credentials..."
-$appConfig = @{
-    DOCKER_REGISTRY_SERVER_URL      = "https://$($acr.Name).azurecr.io"
-    DOCKER_REGISTRY_SERVER_USERNAME = $creds.Username
-    DOCKER_REGISTRY_SERVER_PASSWORD = $creds.Password
-}
-Set-AzWebApp -ResourceGroupName $resourceGroupName -Name $webApp.Name -AppSettings $appConfig
+# 9. Отримання URL додатку
+$webApp = Get-AzWebApp -ResourceGroupName $resourceGroup -Name $webAppName
+Write-Host "Додаток успішно розгорнуто: https://$($webApp.DefaultHostName)"
 
-Write-Host "Deployment completed successfully!"
-Write-Host "Web App URL: https://$($webApp.DefaultHostName)"
+# Генерація артефактів
+cd ..
+./scripts/generate-artifacts.ps1
+
+# Валідація артефактів
+./scripts/validate-artifacts.ps1
+
+# Інструкція для очищення (виконати після перевірки)
+Write-Host "Для видалення ресурсів виконайте:"
+Write-Host "Remove-AzResourceGroup -Name '$resourceGroup' -Force"
