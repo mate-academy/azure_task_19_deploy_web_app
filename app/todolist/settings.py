@@ -125,3 +125,6 @@ TEMPLATES = [
         },
     },
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://azuretaskwebbapp-a8fwb2bggdg9f5ed.uksouth-01.azurewebsites.net"
+]
