@@ -92,7 +92,7 @@ if ($webApp ) {
     throw "Unable to find the Web App resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($webApp.kind.Contains('container')) { 
+if ($webApp.kind.Contains('container')) {
     Write-Output "`u{2705} Checked if the Web App has a type 'container' - OK."
 } else { 
     Write-Output `u{1F914}

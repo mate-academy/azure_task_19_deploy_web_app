@@ -1,1 +1,3 @@
 temp/*
+scripts/buildwebapp.ps1
+scripts/test.ps1
