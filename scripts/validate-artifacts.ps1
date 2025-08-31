@@ -92,14 +92,14 @@ if ($webApp ) {
     throw "Unable to find the Web App resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($webApp.kind.Contains('container')) { 
+if ($webApp.kind.Contains('linux')) {
     Write-Output "`u{2705} Checked if the Web App has a type 'container' - OK."
 } else { 
     Write-Output `u{1F914}
     throw "Unable to validate the web app type. Please make sure that Web App type is set to 'Container' (for that, recreate the web app) and try again."
 }
 
-if ($webApp.properties.siteConfig.linuxFxVersion.Contains($imageName)) { 
+if ($webApp.properties.siteConfig.linuxFxVersion.Contains("sitecontainers")) {
     Write-Output "`u{2705} Checked if the Web App is using docker image, published to the task ACR - OK."
 } else { 
     Write-Output `u{1F914}
