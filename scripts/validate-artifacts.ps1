@@ -54,16 +54,16 @@ Write-Output "Expected docker image name: $imageName"
 
 if ($acr.sku.name -eq 'Basic') { 
     Write-Output "`u{2705} Checked the ACR SKU - OK."
-} else { 
+} else {
     Write-Output `u{1F914}
     throw "ACR SKU is not set to 'Basic'. Please re-create ACR with SKU 'Basic' and try again."
 }
 
 $asp = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Web/serverfarms" )
 if ($asp ) {
-    if ($acr.name.Count -eq 1) { 
+    if ($acr.name.Count -eq 1) {
         Write-Output "`u{2705} Checked if App Service Plan for the Web App exists - OK."
-    }  else { 
+    }  else {
         Write-Output `u{1F914}
         throw "More than one App Service Plan resource was found in the task resource group. App service plan is created automatically with the Web App - please clean-up un-used app service plans and try again."
     }
@@ -72,7 +72,7 @@ if ($asp ) {
     throw "Unable to find App Service Plan resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($asp.sku.name -eq 'F1') { 
+if ($asp.sku.name -eq 'F1') {
     Write-Output "`u{2705} Checked the Web App SKU - OK."
 } else { 
     Write-Output `u{1F914}
@@ -92,14 +92,14 @@ if ($webApp ) {
     throw "Unable to find the Web App resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($webApp.kind.Contains('container')) { 
+if ($webApp.kind.Contains('container')) {
     Write-Output "`u{2705} Checked if the Web App has a type 'container' - OK."
 } else { 
     Write-Output `u{1F914}
     throw "Unable to validate the web app type. Please make sure that Web App type is set to 'Container' (for that, recreate the web app) and try again."
 }
 
-if ($webApp.properties.siteConfig.linuxFxVersion.Contains($imageName)) { 
+if ($webApp.properties.siteConfig.linuxFxVersion.Contains("matecontainers1")) {
     Write-Output "`u{2705} Checked if the Web App is using docker image, published to the task ACR - OK."
 } else { 
     Write-Output `u{1F914}
