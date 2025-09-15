@@ -11,8 +11,8 @@ $artifactsConfigPath = "$PWD/artifacts.json"
 $resourcesTemplateName = "exported-template.json"
 $tempFolderPath = "$PWD/temp"
 
-if ($DownloadArtifacts) { 
-    Write-Output "Reading config" 
+if ($DownloadArtifacts) {
+    Write-Output "Reading config"
     $artifactsConfig = Get-Content -Path $artifactsConfigPath | ConvertFrom-Json 
 
     Write-Output "Checking if temp folder exists"
@@ -23,10 +23,10 @@ if ($DownloadArtifacts) {
 
     Write-Output "Downloading artifacts"
 
-    if (-not $artifactsConfig.resourcesTemplate) { 
+    if (-not $artifactsConfig.resourcesTemplate) {
         throw "Artifact config value 'resourcesTemplate' is empty! Please make sure that you executed the script 'scripts/generate-artifacts.ps1', and commited your changes"
-    } 
-    Invoke-WebRequest -Uri $artifactsConfig.resourcesTemplate -OutFile "$tempFolderPath/$resourcesTemplateName" -UseBasicParsing
+    }
+    Invoke-WebRequest -Uri $artifactsConfig.resourcesTemplate -OutFile "$tempFolderPath/$resourcesTemplateName"
 
 }
 
@@ -36,9 +36,9 @@ $TemplateObject = ConvertFrom-Json $TemplateFileText -AsHashtable
 
 $acr = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.ContainerRegistry/registries" )
 if ($acr ) {
-    if ($acr.name.Count -eq 1) { 
+    if (@($acr).Count -eq 1) {
         Write-Output "`u{2705} Checked if Azure Container Registry resource exists - OK."
-    }  else { 
+    }  elseif (@($acr).Count -gt 1) {
         Write-Output `u{1F914}
         throw "More than one Azure Container Registry resource was found in the task resource group. Please make sure you have only one ACR resource, and try again."
     }
@@ -49,7 +49,7 @@ if ($acr ) {
 
 $registryName = $acr.name.Replace("[parameters('registries_", "").Replace("_name')]", "")
 Write-Output "Registry name: $registryName"
-$imageName = "$($registryName).azurecr.io/todoapp"
+$imageName = "$($registryName).azurecr.io/todoapp:v1"
 Write-Output "Expected docker image name: $imageName"
 
 if ($acr.sku.name -eq 'Basic') { 
@@ -61,9 +61,9 @@ if ($acr.sku.name -eq 'Basic') {
 
 $asp = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Web/serverfarms" )
 if ($asp ) {
-    if ($acr.name.Count -eq 1) { 
+    if (@($asp).Count -eq 1) {
         Write-Output "`u{2705} Checked if App Service Plan for the Web App exists - OK."
-    }  else { 
+    }  elseif (@($asp).Count -gt 1) {
         Write-Output `u{1F914}
         throw "More than one App Service Plan resource was found in the task resource group. App service plan is created automatically with the Web App - please clean-up un-used app service plans and try again."
     }
@@ -72,7 +72,7 @@ if ($asp ) {
     throw "Unable to find App Service Plan resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($asp.sku.name -eq 'F1') { 
+if ($asp.sku.name -eq 'F1') {
     Write-Output "`u{2705} Checked the Web App SKU - OK."
 } else { 
     Write-Output `u{1F914}
@@ -81,9 +81,9 @@ if ($asp.sku.name -eq 'F1') {
 
 $webApp = ( $TemplateObject.resources | Where-Object -Property type -EQ "Microsoft.Web/sites" )
 if ($webApp ) {
-    if ($acr.name.Count -eq 1) { 
+    if (@($webApp).Count -eq 1) {
         Write-Output "`u{2705} Checked if the Web App exists - OK."
-    }  else { 
+    }  elseif (@($webApp).Count -gt 1) {
         Write-Output `u{1F914}
         throw "More than one Web App resource was found in the task resource group. Please make sure that you have only one web app in the task resource group and try again."
     }
@@ -92,14 +92,15 @@ if ($webApp ) {
     throw "Unable to find the Web App resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($webApp.kind.Contains('container')) { 
+if ($webApp.kind.Contains('container')) {
     Write-Output "`u{2705} Checked if the Web App has a type 'container' - OK."
 } else { 
     Write-Output `u{1F914}
     throw "Unable to validate the web app type. Please make sure that Web App type is set to 'Container' (for that, recreate the web app) and try again."
 }
 
-if ($webApp.properties.siteConfig.linuxFxVersion.Contains($imageName)) { 
+$expectedLinuxFx = "DOCKER|$imageName"
+if ($webApp.properties.siteConfig.linuxFxVersion -eq $expectedLinuxFx) {
     Write-Output "`u{2705} Checked if the Web App is using docker image, published to the task ACR - OK."
 } else { 
     Write-Output `u{1F914}
@@ -108,3 +109,11 @@ if ($webApp.properties.siteConfig.linuxFxVersion.Contains($imageName)) {
 
 Write-Output ""
 Write-Output "`u{1F973} Congratulations! All tests passed!"
+$result = @{
+    task = "task19"
+    status = "passed"
+    timestamp = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ss")
+}
+
+$result | ConvertTo-Json | Set-Content -Path "$PWD/result.json"
+Write-Output "Created result.json with test results."
