@@ -72,7 +72,7 @@ if ($asp ) {
     throw "Unable to find App Service Plan resource. Please make sure that you created the Web App in the task resource group and try agian."
 }
 
-if ($asp.sku.name -eq 'F1') { 
+if ($asp.sku.name -eq 'B1') {
     Write-Output "`u{2705} Checked the Web App SKU - OK."
 } else { 
     Write-Output `u{1F914}
