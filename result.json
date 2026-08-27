@@ -1,0 +1,15 @@
+Reading config
+Checking if temp folder exists
+Downloading artifacts
+Validating artifacts
+✅ Checked if Azure Container Registry resource exists - OK.
+Registry name: todoacrfortask19
+Expected docker image name: todoacrfortask19.azurecr.io/todoapp
+✅ Checked the ACR SKU - OK.
+✅ Checked if App Service Plan for the Web App exists - OK.
+✅ Checked the Web App SKU - OK.
+✅ Checked if the Web App exists - OK.
+✅ Checked if the Web App has a type 'container' - OK.
+✅ Checked if the Web App is using docker image, published to the task ACR - OK.
+
+🥳 Congratulations! All tests passed!
